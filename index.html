@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>PackWisely AI - Intelligent Food Packaging Recommendation by IIT(ISM) Dhanbad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 p-3 sm:p-6 font-sans">
+    <main class="max-w-md mx-auto bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+        
+        <header class="bg-emerald-800 text-white p-4">
+            <h1 class="text-xl font-bold tracking-tight">PackWisely AI by IIT(ISM) Dhanbad</h1>
+            <p class="text-xs text-emerald-200">MoFPI Decision Support Recommender (SIH PS 26236)</p>
+        </header>
+
+        <form id="recommendForm" class="p-4 space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Commodity Name</label>
+                <div class="flex gap-2">
+                    <input id="commodity_name" type="text" value="Roasted Cashews" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                    <button type="button" onclick="autoFetchData()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-semibold px-3 py-2 rounded-lg border border-emerald-300">
+                        Auto-Fill
+                    </button>
+                </div>
+                <span id="usdaStatus" class="text-[10px] text-slate-400">Type a commodity (e.g. Mango, Atta, Paneer, Cashew) & click Auto-Fill</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Moisture (%)</label>
+                    <input id="moisture_content" type="number" step="0.1" value="3.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Fat Content (%)</label>
+                    <input id="fat_content" type="number" step="0.1" value="44.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Respiration (mg/kg/h)</label>
+                    <input id="respiration_rate" type="number" step="0.1" value="0.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                    <span class="text-[10px] text-slate-400">0 for non-produce</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Target Shelf Life (Days)</label>
+                    <input id="desired_shelf_life_days" type="number" value="180" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Storage Temp (°C)</label>
+                    <input id="storage_temp" type="number" step="0.5" value="25.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Storage Condition</label>
+                    <select id="storage_type" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-600 outline-none">
+                        <option value="ambient" selected>Ambient</option>
+                        <option value="chilled">Chilled</option>
+                        <option value="frozen">Frozen</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-3 rounded-lg text-sm transition mt-2">
+                Analyze & Recommend
+            </button>
+        </form>
+
+        <div id="loading" class="hidden p-6 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-600 border-t-transparent"></div>
+            <p class="text-xs text-slate-500 mt-2">Computing barrier dynamics on Render Cloud...</p>
+        </div>
+
+        <section id="results" class="hidden p-4 border-t border-slate-100 bg-emerald-50/50 space-y-3">
+            <div class="bg-white p-3.5 rounded-xl border border-emerald-200">
+                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded uppercase">Recommended Material</span>
+                <h2 id="materialTitle" class="text-base font-bold text-slate-900 mt-1"></h2>
+
+                <div class="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600">
+                    <div class="bg-slate-50 p-2 rounded">Thickness: <b id="specThickness" class="text-slate-900"></b></div>
+                    <div class="bg-slate-50 p-2 rounded">Match Score: <b id="specScore" class="text-slate-900"></b></div>
+                    <div class="bg-slate-50 p-2 rounded">OTR: <b id="specOTR" class="text-slate-900"></b></div>
+                    <div class="bg-slate-50 p-2 rounded">WVTR: <b id="specWVTR" class="text-slate-900"></b></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-3.5 rounded-xl border border-emerald-200 flex items-center justify-between gap-3">
+                <div class="text-xs">
+                    <span class="font-bold text-slate-800">MAP Atmosphere:</span>
+                    <div id="mapDetails" class="text-slate-600 mt-1 leading-relaxed">Passive protection</div>
+                </div>
+                <img id="traceQr" alt="Batch Traceability QR" class="w-20 h-20 border rounded-lg p-1 bg-white shrink-0" />
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const BACKEND_URL = "https://packwisely-ai.onrender.com";
+
+        async function autoFetchData() {
+            const query = document.getElementById("commodity_name").value.trim();
+            const statusLabel = document.getElementById("usdaStatus");
+            if (!query) return;
+
+            statusLabel.innerText = "Searching food database...";
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/v1/food-lookup?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById("moisture_content").value = data.moisture;
+                    document.getElementById("fat_content").value = data.fat;
+                    if (data.resp !== undefined) document.getElementById("respiration_rate").value = data.resp;
+                    if (data.shelf !== undefined) document.getElementById("desired_shelf_life_days").value = data.shelf;
+                    if (data.temp !== undefined) document.getElementById("storage_temp").value = data.temp;
+                    if (data.storage !== undefined) document.getElementById("storage_type").value = data.storage;
+
+                    statusLabel.innerText = `Auto-Filled: ${data.name}`;
+                    statusLabel.className = "text-[10px] text-emerald-600 font-semibold";
+                } else {
+                    statusLabel.innerText = "Commodity not recognized. Please enter values manually.";
+                    statusLabel.className = "text-[10px] text-amber-600";
+                }
+            } catch (err) {
+                statusLabel.innerText = "Lookup failed. Please check network.";
+                statusLabel.className = "text-[10px] text-rose-500";
+            }
+        }
+
+        const form = document.getElementById("recommendForm");
+        const loading = document.getElementById("loading");
+        const results = document.getElementById("results");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            loading.classList.remove("hidden");
+            results.classList.add("hidden");
+
+            const payload = {
+                commodity_name: document.getElementById("commodity_name").value,
+                moisture_content: parseFloat(document.getElementById("moisture_content").value),
+                fat_content: parseFloat(document.getElementById("fat_content").value),
+                ph_level: 6.5,
+                respiration_rate: parseFloat(document.getElementById("respiration_rate").value),
+                desired_shelf_life_days: parseInt(document.getElementById("desired_shelf_life_days").value),
+                storage_temp: parseFloat(document.getElementById("storage_temp").value),
+                relative_humidity: 60.0,
+                storage_type: document.getElementById("storage_type").value
+            };
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/v1/recommend`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const prime = data.primary_recommendation;
+
+                document.getElementById("materialTitle").innerText = prime.name;
+                document.getElementById("specScore").innerText = prime.match_score + "/100";
+                document.getElementById("specThickness").innerText = prime.recommended_spec.film_thickness;
+                document.getElementById("specOTR").innerText = prime.recommended_spec.recommended_otr;
+                document.getElementById("specWVTR").innerText = prime.recommended_spec.recommended_wvtr;
+                document.getElementById("traceQr").src = data.traceability_qr_base64;
+
+                if (data.map_gas_mix) {
+                    document.getElementById("mapDetails").innerHTML = 
+                        `O₂: <b>${data.map_gas_mix.O2}</b><br>` +
+                        `CO₂: <b>${data.map_gas_mix.CO2}</b><br>` +
+                        `N₂: <b>${data.map_gas_mix.N2}</b>`;
+                } else {
+                    document.getElementById("mapDetails").innerText = "Passive packaging (No MAP flush required)";
+                }
+
+                results.classList.remove("hidden");
+            } catch (err) {
+                alert("Failed to connect to backend. Please wait 30 seconds for Render to wake up, then try again.");
+                console.error(err);
+            } finally {
+                loading.classList.add("hidden");
+            }
+        });
+    </script>
+</body>
+</html>
